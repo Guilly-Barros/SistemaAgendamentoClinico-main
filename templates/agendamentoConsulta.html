@@ -1,107 +1,138 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agendamento de Consulta</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="#">Clínica Saúde+</a>
-            <div class="d-flex">
-                <a href="{{ url_for('user.visao_recepcionista') }}" class="btn btn-outline-light btn-sm">Voltar</a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container mt-5 mb-5">
-        <div class="card shadow-lg border-0 rounded-4">
-            <div class="card-header bg-primary text-white text-center">
-                <h4 class="mb-0">Cadastrar Agendamento de Consulta</h4>
+{% extends "base.html" %}
+{% block title %}Agendar Consulta — Clínica Vida+{% endblock %}
+{% block nav_actions %}<a href="{{ url_for('user.visao_recepcionista') }}" class="btn btn-light btn-sm">Voltar</a>{% endblock %}
+{% block content %}
+  <div class="container py-5">
+    <div class="card">
+      <div class="card-header bg-primary text-white text-center py-3" style="border-top-left-radius:16px;border-top-right-radius:16px;">
+        <h4 class="mb-0">Cadastrar Agendamento de Consulta</h4>
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('user.agendar_consulta') }}">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Paciente</label>
+              <select name="paciente_id" class="form-select" required>
+                <option value="">Selecione um paciente</option>
+                {% for paciente in pacientes %}
+                  <option value="{{ paciente['id'] }}">{{ paciente['nome'] }}</option>
+                {% endfor %}
+              </select>
             </div>
 
-            <div class="card-body p-4">
-                <!-- mensagens de alerta -->
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                  {% if messages %}
-                    {% for category, message in messages %}
-                      <div class="alert alert-{{ category }} text-center" role="alert">
-                        {{ message }}
-                      </div>
-                    {% endfor %}
-                  {% endif %}
-                {% endwith %}
-
-                <form method="POST" action="{{ url_for('user.agendar_consulta') }}">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="paciente" class="form-label fw-semibold">Paciente</label>
-                            <select name="paciente_id" id="paciente" class="form-select" required>
-                                <option value="">Selecione um paciente</option>
-                                {% for paciente in pacientes %}
-                                    <option value="{{ paciente['id'] }}">{{ paciente['nome'] }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label for="medico" class="form-label fw-semibold">Médico</label>
-                            <select name="medico_id" id="medico" class="form-select" required>
-                                <option value="">Selecione um médico</option>
-                                {% for medico in medicos %}
-                                    <option value="{{ medico['id'] }}">{{ medico['nome'] }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="procedimento" class="form-label fw-semibold">Procedimento</label>
-                            <select name="procedimento_id" id="procedimento" class="form-select" required>
-                                <option value="">Selecione o procedimento</option>
-                                {% for proc in procedimentos %}
-                                    <option value="{{ proc['id'] }}">{{ proc['nome'] }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label for="sala" class="form-label fw-semibold">Sala</label>
-                            <select name="sala_id" id="sala" class="form-select" required>
-                                <option value="">Selecione a sala</option>
-                                {% for sala in salas %}
-                                    <option value="{{ sala['id'] }}">{{ sala['nome'] }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="data" class="form-label fw-semibold">Data</label>
-                            <input type="date" name="data" id="data" class="form-control" required>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label for="hora" class="form-label fw-semibold">Hora</label>
-                            <input type="time" name="hora" id="hora" class="form-control" required>
-                        </div>
-                    </div>
-
-                    <div class="text-center mt-4">
-                        <button type="submit" class="btn btn-success px-5 py-2">
-                            Confirmar Agendamento
-                        </button>
-                    </div>
-                </form>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Médico</label>
+              <select name="medico_id" id="medico_id" class="form-select" required>
+                <option value="">Selecione um médico</option>
+                {% for medico in medicos %}
+                  <option value="{{ medico['id'] }}">{{ medico['nome'] }}</option>
+                {% endfor %}
+              </select>
             </div>
-        </div>
+
+            <!-- PROCEDIMENTO + BOXES DINÂMICOS NA MESMA COLUNA -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Procedimento</label>
+              <select name="procedimento_id" id="procedimento_id" class="form-select" required>
+                <option value="">Selecione o procedimento</option>
+                {% if procedimentos|length == 0 %}
+                  <option value="__particular__">Consulta Particular</option>
+                  <option value="__convenio__">Consulta Convênio</option>
+                  <option value="__receita__">Solicitação de Receita</option>
+                {% else %}
+                  {% for proc in procedimentos %}
+                    <option value="{{ proc['id'] }}">{{ proc['nome'] }}</option>
+                  {% endfor %}
+                {% endif %}
+              </select>
+              <div class="form-hint">Se não houver registros, opções padrão serão exibidas.</div>
+
+              <!-- Box Convênio (EMBAIXO de Procedimento) -->
+              <div id="box_convenios" style="display:none;" class="mt-3">
+                <label class="form-label fw-semibold">Convênio</label>
+                <select class="form-select" name="convenio_subtipo" id="convenio_subtipo">
+                  <option value="">Selecione o convênio</option>
+                  <option>Ipasgo</option>
+                  <option>Unimed</option>
+                  <option>Hapvida</option>
+                  <option>SulAmérica</option>
+                  <option>Bradesco Saúde</option>
+                </select>
+              </div>
+
+              <!-- Box Particular -->
+              <div id="box_particular" style="display:none;" class="mt-3">
+                <div class="alert alert-info mb-0">
+                  Valor da consulta particular: <strong>R$ 180,00</strong>
+                </div>
+                <input type="hidden" name="valor_particular" value="180.00"/>
+              </div>
+
+              <!-- Box Receita -->
+              <div id="box_receita" style="display:none;" class="mt-3">
+                <label class="form-label fw-semibold">Médico (para a receita)</label>
+                <select class="form-select" name="medico_receita_id" id="medico_receita_id">
+                  <option value="">Selecione o médico</option>
+                  {% for medico in medicos %}
+                    <option value="{{ medico['id'] }}">{{ medico['nome'] }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Sala</label>
+              <select name="sala_id" class="form-select" required>
+                <option value="">Selecione a sala</option>
+                {% for sala in salas %}
+                  <option value="{{ sala['id'] }}">{{ sala['nome'] }}</option>
+                {% endfor %}
+              </select>
+
+              <div class="row g-3 mt-1">
+                <div class="col-6">
+                  <label class="form-label fw-semibold">Data</label>
+                  <input type="date" name="data" class="form-control" required>
+                </div>
+                <div class="col-6">
+                  <label class="form-label fw-semibold">Hora</label>
+                  <input type="time" name="hora" class="form-control" required>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-center mt-4">
+            <button type="submit" class="btn btn-success px-5 py-2">
+              <i class="bi bi-check2-circle"></i> Confirmar Agendamento
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
+{% endblock %}
 
-</body>
-</html>
+{% block body_scripts %}
+<script>
+(function(){
+  const proc = document.getElementById('procedimento_id');
+  const boxConv = document.getElementById('box_convenios');
+  const boxPart = document.getElementById('box_particular');
+  const boxRece = document.getElementById('box_receita');
+
+  function normalize(s){ return (s || '').toLowerCase(); }
+  function updateVisibility(){
+    const label = proc.options[proc.selectedIndex]?.text || '';
+    const val   = proc.value || '';
+    const isConv = normalize(label).includes('convênio') || val === '__convenio__';
+    const isPart = normalize(label).includes('particular') || val === '__particular__';
+    const isRec  = normalize(label).includes('receita') || val === '__receita__';
+    boxConv.style.display = isConv ? '' : 'none';
+    boxPart.style.display = isPart ? '' : 'none';
+    boxRece.style.display = isRec ? '' : 'none';
+  }
+  if(proc){ proc.addEventListener('change', updateVisibility); updateVisibility(); }
+})();
+</script>
+{% endblock %}
