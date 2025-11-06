@@ -88,6 +88,16 @@
           <tbody id="agendamentos-accordion">
             {% if agendamentos %}
               {% for agendamento in agendamentos %}
+<<<<<<< HEAD
+              <tr class="agenda-row" data-search="{{ agendamento.paciente }} {{ agendamento.medico }} {{ agendamento.procedimento }} {{ agendamento.status_label }}" data-status="{{ agendamento.status }}" data-date="{{ agendamento.data }}">
+                <td class="fw-semibold">{{ agendamento.paciente }}</td>
+                <td>{{ agendamento.medico }}</td>
+                <td>{{ agendamento.procedimento }}</td>
+                <td>{{ agendamento.data_display }}</td>
+                <td>{{ agendamento.hora }}</td>
+                <td>
+                  <span class="badge text-capitalize px-3 py-2" data-status-badge="{{ agendamento.status }}">{{ agendamento.status_label }}</span>
+=======
               <tr class="agenda-row" data-search="{{ agendamento.paciente }} {{ agendamento.medico }} {{ agendamento.procedimento }}" data-status="{{ agendamento.status }}" data-date="{{ agendamento.data }}">
                 <td class="fw-semibold">{{ agendamento.paciente }}</td>
                 <td>{{ agendamento.medico }}</td>
@@ -96,6 +106,7 @@
                 <td>{{ agendamento.hora }}</td>
                 <td>
                   <span class="badge text-capitalize px-3 py-2" data-status-badge="{{ agendamento.status }}">{{ agendamento.status }}</span>
+>>>>>>> aad6502056a33dc6cedc27dc4386fd96bb4ce1b3
                 </td>
                 <td class="text-end">
                   <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#agendamento-{{ agendamento.id }}" aria-expanded="false" aria-controls="agendamento-{{ agendamento.id }}">
@@ -110,7 +121,10 @@
 <<<<<<< HEAD
 =======
 <<<<<<< HEAD
+=======
+<<<<<<< HEAD
 >>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
+>>>>>>> aad6502056a33dc6cedc27dc4386fd96bb4ce1b3
                       <form
                         class="row g-3 align-items-end"
                         method="post"
@@ -123,10 +137,13 @@
                       >
 <<<<<<< HEAD
 =======
+<<<<<<< HEAD
+=======
 =======
                       <form class="row g-2" method="post" action="{{ url_for('user.atualizar_agendamento', agendamento_id=agendamento.id) }}">
 >>>>>>> 09d87c69ecc2fa598784ebec661e8be34cb565c3
 >>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
+>>>>>>> aad6502056a33dc6cedc27dc4386fd96bb4ce1b3
                         <div class="col-md-4">
                           <label class="form-label small text-uppercase text-muted">Novo status</label>
                           <select name="status" class="form-select">
@@ -141,7 +158,10 @@
 <<<<<<< HEAD
 =======
 <<<<<<< HEAD
+=======
+<<<<<<< HEAD
 >>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
+>>>>>>> aad6502056a33dc6cedc27dc4386fd96bb4ce1b3
                           <input type="date" name="data" class="form-control" value="{{ agendamento.data }}" data-agendamento-date>
                         </div>
                         <div class="col-md-4">
@@ -160,6 +180,8 @@
                           </div>
 <<<<<<< HEAD
 =======
+<<<<<<< HEAD
+=======
 =======
                           <input type="date" name="data" class="form-control" value="{{ agendamento.data }}">
                         </div>
@@ -168,6 +190,7 @@
                           <input type="time" name="hora" class="form-control" value="{{ agendamento.hora }}">
 >>>>>>> 09d87c69ecc2fa598784ebec661e8be34cb565c3
 >>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
+>>>>>>> aad6502056a33dc6cedc27dc4386fd96bb4ce1b3
                         </div>
                         <div class="col-12 text-end">
                           <button type="submit" class="btn btn-primary btn-sm">Salvar alterações</button>
@@ -253,8 +276,12 @@
 <<<<<<< HEAD
 
 =======
+<<<<<<< HEAD
+
+=======
 >>>>>>> 09d87c69ecc2fa598784ebec661e8be34cb565c3
 >>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
+>>>>>>> aad6502056a33dc6cedc27dc4386fd96bb4ce1b3
 {% endblock %}
 
 {% block body_scripts %}
@@ -264,7 +291,10 @@
 <<<<<<< HEAD
 =======
 <<<<<<< HEAD
+=======
+<<<<<<< HEAD
 >>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
+>>>>>>> aad6502056a33dc6cedc27dc4386fd96bb4ce1b3
       const forms = document.querySelectorAll('[data-agendamento-form]');
 
       forms.forEach(form => {
@@ -380,9 +410,12 @@
     document.addEventListener('DOMContentLoaded', () => {
 <<<<<<< HEAD
 =======
+<<<<<<< HEAD
+=======
 =======
 >>>>>>> 09d87c69ecc2fa598784ebec661e8be34cb565c3
 >>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
+>>>>>>> aad6502056a33dc6cedc27dc4386fd96bb4ce1b3
       const searchInput = document.getElementById('agenda-search');
       const statusSelect = document.getElementById('agenda-status');
       const dateInput = document.getElementById('agenda-date');

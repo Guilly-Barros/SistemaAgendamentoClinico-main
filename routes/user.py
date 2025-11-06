@@ -1,7 +1,12 @@
 <<<<<<< HEAD
 # -*- coding: utf-8 -*-
+import re
+=======
+<<<<<<< HEAD
+# -*- coding: utf-8 -*-
 =======
 >>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
+>>>>>>> aad6502056a33dc6cedc27dc4386fd96bb4ce1b3
 import sqlite3
 
 from flask import (
@@ -22,6 +27,99 @@ STATUS_AGENDAMENTO = [
     ("concluido", "Concluído"),
     ("cancelado", "Cancelado"),
 ]
+<<<<<<< HEAD
+STATUS_LABELS = {valor: rotulo for valor, rotulo in STATUS_AGENDAMENTO}
+CONFLICT_TOKENS = ("<<<<<<<", "=======", ">>>>>>>")
+
+
+def _remover_marcadores_conflito(valor):
+    if not isinstance(valor, str):
+        return valor
+    texto = valor.strip()
+    if not texto:
+        return texto
+    if not any(token in texto for token in CONFLICT_TOKENS):
+        return texto
+
+    blocos = []
+    trecho_atual = []
+    for linha in texto.splitlines():
+        if linha.startswith("<<<<<<<"):
+            trecho_atual = []
+            continue
+        if linha.startswith("======="):
+            blocos.append("\n".join(trecho_atual).strip())
+            trecho_atual = []
+            continue
+        if linha.startswith(">>>>>>>"):
+            blocos.append("\n".join(trecho_atual).strip())
+            trecho_atual = []
+            continue
+        trecho_atual.append(linha)
+
+    if trecho_atual:
+        blocos.append("\n".join(trecho_atual).strip())
+
+    for bloco in blocos:
+        if bloco:
+            return bloco
+
+    return texto.replace("<<<<<<<", "").replace("=======", "").replace(">>>>>>>", "").strip()
+
+
+def _normalizar_status(valor, validos):
+    texto = (_remover_marcadores_conflito(valor) or "").strip().lower()
+    if not texto:
+        return "agendado" if "agendado" in validos else (next(iter(validos)) if validos else texto)
+
+    if texto in validos:
+        return texto
+
+    for candidato in validos:
+        if candidato in texto:
+            return candidato
+
+    return texto
+
+
+def _normalizar_data(valor):
+    texto = (_remover_marcadores_conflito(valor) or "").strip()
+    if not texto:
+        return texto
+
+    match_iso = re.search(r"\b\d{4}-\d{2}-\d{2}\b", texto)
+    if match_iso:
+        return match_iso.group(0)
+
+    match_br = re.search(r"\b\d{2}/\d{2}/\d{4}\b", texto)
+    if match_br:
+        dia, mes, ano = match_br.group(0).split("/")
+        return f"{ano}-{mes}-{dia}"
+
+    return texto
+
+
+def _normalizar_hora(valor):
+    texto = (_remover_marcadores_conflito(valor) or "").strip()
+    if not texto:
+        return texto
+
+    match_hora = re.search(r"\b\d{2}:\d{2}\b", texto)
+    if match_hora:
+        return match_hora.group(0)
+
+    return texto
+
+
+def _formatar_data_display(valor):
+    if not valor:
+        return valor
+    try:
+        return datetime.strptime(valor, "%Y-%m-%d").strftime("%d/%m/%Y")
+    except ValueError:
+        return valor
+=======
+>>>>>>> aad6502056a33dc6cedc27dc4386fd96bb4ce1b3
 
 # NOME DO BLUEPRINT *deve* ser "user" para os endpoints ficarem "user.*"
 user_bp = Blueprint('user', __name__, template_folder='templates')
@@ -253,8 +351,12 @@ def procedimentos():
 <<<<<<< HEAD
                a.medico_id, a.sala_id, a.procedimento_id,
 =======
+<<<<<<< HEAD
+               a.medico_id, a.sala_id, a.procedimento_id,
+=======
 >>>>>>> 09d87c69ecc2fa598784ebec661e8be34cb565c3
 >>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
+>>>>>>> aad6502056a33dc6cedc27dc4386fd96bb4ce1b3
                pac.nome AS paciente, med.nome AS medico,
                pr.nome AS procedimento, s.nome AS sala
         FROM agendamentos a
@@ -265,7 +367,60 @@ def procedimentos():
         ORDER BY a.data, a.hora
         """
     )
+<<<<<<< HEAD
+    agendamentos_brutos = cur.fetchall()
+
+    colunas_agendamento = agendamentos_brutos[0].keys() if agendamentos_brutos else []
+    possui_coluna_status = "status" in colunas_agendamento
+    status_validos = {valor for valor, _ in STATUS_AGENDAMENTO}
+
+    agendamentos = []
+    atualizacoes = []
+
+    for row in agendamentos_brutos:
+        linha = dict(row)
+
+        status_original = linha.get("status", "")
+        data_original = linha.get("data", "")
+        hora_original = linha.get("hora", "")
+
+        status_normalizado = _normalizar_status(status_original, status_validos)
+        data_normalizada = _normalizar_data(data_original)
+        hora_normalizada = _normalizar_hora(hora_original)
+
+        linha["status"] = status_normalizado
+        linha["status_label"] = STATUS_LABELS.get(status_normalizado, status_normalizado.title() if isinstance(status_normalizado, str) else status_normalizado)
+        linha["data"] = data_normalizada
+        linha["data_display"] = _formatar_data_display(data_normalizada) if data_normalizada else data_original
+        linha["hora"] = hora_normalizada
+
+        agendamentos.append(linha)
+
+        if linha.get("id") is not None and (
+            status_normalizado != status_original
+            or data_normalizada != data_original
+            or hora_normalizada != hora_original
+        ):
+            if possui_coluna_status:
+                atualizacoes.append((status_normalizado, data_normalizada, hora_normalizada, linha["id"]))
+            else:
+                atualizacoes.append((data_normalizada, hora_normalizada, linha["id"]))
+
+    if atualizacoes:
+        if possui_coluna_status:
+            cur.executemany(
+                "UPDATE agendamentos SET status=?, data=?, hora=? WHERE id=?",
+                atualizacoes,
+            )
+        else:
+            cur.executemany(
+                "UPDATE agendamentos SET data=?, hora=? WHERE id=?",
+                atualizacoes,
+            )
+        conn.commit()
+=======
     agendamentos = cur.fetchall()
+>>>>>>> aad6502056a33dc6cedc27dc4386fd96bb4ce1b3
 
     conn.close()
 
@@ -398,7 +553,10 @@ def atualizar_agendamento(agendamento_id):
 <<<<<<< HEAD
 =======
 <<<<<<< HEAD
+=======
+<<<<<<< HEAD
 >>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
+>>>>>>> aad6502056a33dc6cedc27dc4386fd96bb4ce1b3
             livres = horarios_disponiveis(
                 atual["medico_id"],
                 atual["sala_id"],
@@ -407,10 +565,13 @@ def atualizar_agendamento(agendamento_id):
             )
 <<<<<<< HEAD
 =======
+<<<<<<< HEAD
+=======
 =======
             livres = horarios_disponiveis(atual["medico_id"], atual["sala_id"], nova_data)
 >>>>>>> 09d87c69ecc2fa598784ebec661e8be34cb565c3
 >>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
+>>>>>>> aad6502056a33dc6cedc27dc4386fd96bb4ce1b3
             if nova_hora not in livres:
                 conn.close()
                 flash("Horário indisponível para este médico ou sala.", "danger")
@@ -642,6 +803,8 @@ def paciente_horarios_api():
     return jsonify(livres)
 <<<<<<< HEAD
 =======
+<<<<<<< HEAD
+=======
 
 
 @user_bp.route("/paciente/horarios_disponiveis", endpoint="paciente_horarios_api")
@@ -671,6 +834,7 @@ def paciente_horarios_api():
     livres = horarios_disponiveis(agendamento["medico_id"], agendamento["sala_id"], dia)
     return jsonify(livres)
 >>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
+>>>>>>> aad6502056a33dc6cedc27dc4386fd96bb4ce1b3
 
 
 # ------------------ Recepção: criar usuários ------------------
