@@ -103,17 +103,24 @@ def criar_tabelas():
     conn.close()
 
 # ---------- util: calcular horários disponíveis ----------
-def horarios_disponiveis(medico_id:int, sala_id:int, dia_str:str, passo_min=30):
+def horarios_disponiveis(medico_id:int, sala_id:int, dia_str:str, passo_min=30, ignorar_agendamento_id=None):
     """
     Gera timeslots entre 08:00-17:00 para a data dada,
     removendo horários já ocupados (sala OU médico ocupados).
+    Quando `ignorar_agendamento_id` é informado, o agendamento correspondente
+    é desconsiderado da checagem de conflito (útil para edições).
     Retorna lista de strings 'HH:MM'.
     """
     conn = conectar()
     c = conn.cursor()
     # horários ocupados por sala OU por médico na mesma data
-    c.execute("""SELECT hora FROM agendamentos WHERE data=? AND (sala_id=? OR medico_id=?)""",
-              (dia_str, sala_id, medico_id))
+    params = [dia_str, sala_id, medico_id]
+    query = """SELECT hora FROM agendamentos WHERE data=? AND (sala_id=? OR medico_id=?)"""
+    if ignorar_agendamento_id is not None:
+        query += " AND id<>?"
+        params.append(ignorar_agendamento_id)
+
+    c.execute(query, params)
     ocupados = {row["hora"] for row in c.fetchall()}
     conn.close()
 

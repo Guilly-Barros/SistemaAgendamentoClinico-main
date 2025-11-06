@@ -107,7 +107,20 @@
                 <td colspan="7" class="p-0">
                   <div class="collapse" id="agendamento-{{ agendamento.id }}" data-bs-parent="#agendamentos-accordion">
                     <div class="border-top px-3 py-3 bg-light-subtle">
+<<<<<<< HEAD
+                      <form
+                        class="row g-3 align-items-end"
+                        method="post"
+                        action="{{ url_for('user.atualizar_agendamento', agendamento_id=agendamento.id) }}"
+                        data-agendamento-form
+                        data-agendamento-id="{{ agendamento.id }}"
+                        data-medico="{{ agendamento.medico_id }}"
+                        data-sala="{{ agendamento.sala_id }}"
+                        data-dia-atual="{{ agendamento.data }}"
+                      >
+=======
                       <form class="row g-2" method="post" action="{{ url_for('user.atualizar_agendamento', agendamento_id=agendamento.id) }}">
+>>>>>>> 09d87c69ecc2fa598784ebec661e8be34cb565c3
                         <div class="col-md-4">
                           <label class="form-label small text-uppercase text-muted">Novo status</label>
                           <select name="status" class="form-select">
@@ -119,11 +132,30 @@
                         </div>
                         <div class="col-md-4">
                           <label class="form-label small text-uppercase text-muted">Nova data</label>
+<<<<<<< HEAD
+                          <input type="date" name="data" class="form-control" value="{{ agendamento.data }}" data-agendamento-date>
+                        </div>
+                        <div class="col-md-4">
+                          <label class="form-label small text-uppercase text-muted">Nova hora</label>
+                          <select
+                            name="hora"
+                            class="form-select"
+                            data-agendamento-hora
+                            data-hora-atual="{{ agendamento.hora }}"
+                          >
+                            <option value="">Selecione uma data</option>
+                            <option value="{{ agendamento.hora }}" selected>{{ agendamento.hora }}</option>
+                          </select>
+                          <div class="form-text text-muted small" data-slot-helper>
+                            Escolha uma data para consultar horários livres.
+                          </div>
+=======
                           <input type="date" name="data" class="form-control" value="{{ agendamento.data }}">
                         </div>
                         <div class="col-md-4">
                           <label class="form-label small text-uppercase text-muted">Nova hora</label>
                           <input type="time" name="hora" class="form-control" value="{{ agendamento.hora }}">
+>>>>>>> 09d87c69ecc2fa598784ebec661e8be34cb565c3
                         </div>
                         <div class="col-12 text-end">
                           <button type="submit" class="btn btn-primary btn-sm">Salvar alterações</button>
@@ -203,12 +235,132 @@
     </form>
   </div>
 </div>
+<<<<<<< HEAD
+
+=======
+>>>>>>> 09d87c69ecc2fa598784ebec661e8be34cb565c3
 {% endblock %}
 
 {% block body_scripts %}
   {{ super() }}
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+<<<<<<< HEAD
+      const forms = document.querySelectorAll('[data-agendamento-form]');
+
+      forms.forEach(form => {
+        const dateInput = form.querySelector('[data-agendamento-date]');
+        const hourSelect = form.querySelector('[data-agendamento-hora]');
+        const helper = form.querySelector('[data-slot-helper]');
+        if (!dateInput || !hourSelect) { return; }
+
+        const medicoId = form.dataset.medico;
+        const salaId = form.dataset.sala;
+        const agendamentoId = form.dataset.agendamentoId;
+
+        if (!hourSelect.dataset.horaSelecionada && hourSelect.value) {
+          hourSelect.dataset.horaSelecionada = hourSelect.value;
+        }
+
+        const fillOptions = (horarios, diaSelecionado) => {
+          hourSelect.innerHTML = '';
+
+          const placeholder = document.createElement('option');
+          placeholder.value = '';
+          placeholder.textContent = horarios.length ? 'Selecione um horário' : 'Nenhum horário disponível';
+          placeholder.disabled = true;
+          placeholder.selected = true;
+          hourSelect.appendChild(placeholder);
+
+          const horaAtual = hourSelect.dataset.horaAtual || '';
+          const horaSelecionada = hourSelect.dataset.horaSelecionada || '';
+
+          horarios.forEach(hora => {
+            const opt = document.createElement('option');
+            opt.value = hora;
+            opt.textContent = hora;
+            hourSelect.appendChild(opt);
+          });
+
+          const diaOriginal = form.dataset.diaAtual || '';
+          if (horaAtual && diaSelecionado === diaOriginal && !horarios.includes(horaAtual)) {
+            const optAtual = document.createElement('option');
+            optAtual.value = horaAtual;
+            optAtual.textContent = `${horaAtual} (reservado)`;
+            hourSelect.appendChild(optAtual);
+          }
+
+          const preferencia = horaSelecionada || horaAtual;
+          if (preferencia && hourSelect.querySelector(`option[value="${preferencia}"]`)) {
+            hourSelect.value = preferencia;
+          }
+
+          helper.textContent = horarios.length
+            ? `${horarios.length} horário(s) livre(s) no dia selecionado.`
+            : 'Nenhum horário livre para este dia.';
+        };
+
+        const requestSlots = async () => {
+          const dia = dateInput.value;
+          if (!dia) {
+            hourSelect.innerHTML = '<option value="">Selecione uma data</option>';
+            helper.textContent = 'Escolha uma data para consultar horários livres.';
+            return;
+          }
+
+          hourSelect.disabled = true;
+          hourSelect.innerHTML = '<option value="">Carregando horários...</option>';
+          helper.textContent = 'Consultando horários livres...';
+
+          try {
+            const url = new URL('/user/recepcionista/horarios_disponiveis', window.location.origin);
+            url.searchParams.set('medico_id', medicoId);
+            url.searchParams.set('sala_id', salaId);
+            url.searchParams.set('dia', dia);
+            if (agendamentoId) {
+              url.searchParams.set('ignorar_id', agendamentoId);
+            }
+
+            const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            if (!res.ok) { throw new Error('Erro ao buscar horários'); }
+
+            const data = await res.json();
+            const horarios = Array.isArray(data) ? data : [];
+            fillOptions(horarios, dia);
+          } catch (error) {
+            hourSelect.innerHTML = '<option value="">Não foi possível carregar</option>';
+            helper.textContent = 'Erro ao consultar horários disponíveis.';
+            window.spawnToast?.('Erro ao consultar horários disponíveis.', 'danger');
+          } finally {
+            hourSelect.disabled = false;
+          }
+        };
+
+        dateInput.addEventListener('change', () => {
+          hourSelect.dataset.horaSelecionada = '';
+          requestSlots();
+        });
+
+        hourSelect.addEventListener('change', () => {
+          hourSelect.dataset.horaSelecionada = hourSelect.value;
+        });
+
+        const collapseEl = form.closest('.collapse');
+        if (collapseEl) {
+          collapseEl.addEventListener('shown.bs.collapse', requestSlots);
+          if (collapseEl.classList.contains('show')) {
+            requestSlots();
+          }
+        } else {
+          requestSlots();
+        }
+      });
+    });
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+=======
+>>>>>>> 09d87c69ecc2fa598784ebec661e8be34cb565c3
       const searchInput = document.getElementById('agenda-search');
       const statusSelect = document.getElementById('agenda-status');
       const dateInput = document.getElementById('agenda-date');
