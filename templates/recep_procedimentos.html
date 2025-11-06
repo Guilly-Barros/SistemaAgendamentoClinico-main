@@ -108,6 +108,9 @@
                   <div class="collapse" id="agendamento-{{ agendamento.id }}" data-bs-parent="#agendamentos-accordion">
                     <div class="border-top px-3 py-3 bg-light-subtle">
 <<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
                       <form
                         class="row g-3 align-items-end"
                         method="post"
@@ -118,9 +121,12 @@
                         data-sala="{{ agendamento.sala_id }}"
                         data-dia-atual="{{ agendamento.data }}"
                       >
+<<<<<<< HEAD
+=======
 =======
                       <form class="row g-2" method="post" action="{{ url_for('user.atualizar_agendamento', agendamento_id=agendamento.id) }}">
 >>>>>>> 09d87c69ecc2fa598784ebec661e8be34cb565c3
+>>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
                         <div class="col-md-4">
                           <label class="form-label small text-uppercase text-muted">Novo status</label>
                           <select name="status" class="form-select">
@@ -133,6 +139,9 @@
                         <div class="col-md-4">
                           <label class="form-label small text-uppercase text-muted">Nova data</label>
 <<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
                           <input type="date" name="data" class="form-control" value="{{ agendamento.data }}" data-agendamento-date>
                         </div>
                         <div class="col-md-4">
@@ -149,6 +158,8 @@
                           <div class="form-text text-muted small" data-slot-helper>
                             Escolha uma data para consultar horários livres.
                           </div>
+<<<<<<< HEAD
+=======
 =======
                           <input type="date" name="data" class="form-control" value="{{ agendamento.data }}">
                         </div>
@@ -156,6 +167,7 @@
                           <label class="form-label small text-uppercase text-muted">Nova hora</label>
                           <input type="time" name="hora" class="form-control" value="{{ agendamento.hora }}">
 >>>>>>> 09d87c69ecc2fa598784ebec661e8be34cb565c3
+>>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
                         </div>
                         <div class="col-12 text-end">
                           <button type="submit" class="btn btn-primary btn-sm">Salvar alterações</button>
@@ -238,7 +250,11 @@
 <<<<<<< HEAD
 
 =======
+<<<<<<< HEAD
+
+=======
 >>>>>>> 09d87c69ecc2fa598784ebec661e8be34cb565c3
+>>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
 {% endblock %}
 
 {% block body_scripts %}
@@ -246,6 +262,9 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
 <<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
       const forms = document.querySelectorAll('[data-agendamento-form]');
 
       forms.forEach(form => {
@@ -359,8 +378,11 @@
   </script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+<<<<<<< HEAD
+=======
 =======
 >>>>>>> 09d87c69ecc2fa598784ebec661e8be34cb565c3
+>>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
       const searchInput = document.getElementById('agenda-search');
       const statusSelect = document.getElementById('agenda-status');
       const dateInput = document.getElementById('agenda-date');

@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+# -*- coding: utf-8 -*-
+=======
+>>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
 import sqlite3
 
 from flask import (
@@ -73,9 +77,12 @@ def user():
 
                 tipo = session["usuario_tipo"]
                 conn.close()
-                if   tipo == "medico":                               return redirect(url_for("user.visao_medico"))
-                elif tipo == "paciente":                              return redirect(url_for("user.visao_paciente"))
-                elif tipo in ("recepcionista", "recepcionista master"): return redirect(url_for("user.visao_recepcionista"))
+                if tipo == "medico":
+                    return redirect(url_for("user.visao_medico"))
+                if tipo == "paciente":
+                    return redirect(url_for("user.visao_paciente"))
+                if tipo in ("recepcionista", "recepcionista master"):
+                    return redirect(url_for("user.visao_recepcionista"))
                 else:
                     flash("Tipo de usuário desconhecido!", "danger")
                     return redirect(url_for("user.user"))
@@ -163,7 +170,7 @@ def agendar_consulta():
             conn.close()
             return redirect(url_for("user.agendar_consulta"))
 
-        # procedimento fallback textual → converte para ID real
+        # procedimento fallback textual -> converte para ID real
         if not procedimento_id.isdigit():
             nome_map = {
                 "__particular__": "Consulta Particular",
@@ -243,7 +250,11 @@ def procedimentos():
 <<<<<<< HEAD
                a.medico_id, a.sala_id, a.procedimento_id,
 =======
+<<<<<<< HEAD
+               a.medico_id, a.sala_id, a.procedimento_id,
+=======
 >>>>>>> 09d87c69ecc2fa598784ebec661e8be34cb565c3
+>>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
                pac.nome AS paciente, med.nome AS medico,
                pr.nome AS procedimento, s.nome AS sala
         FROM agendamentos a
@@ -385,15 +396,21 @@ def atualizar_agendamento(agendamento_id):
 
         if nova_data != atual["data"] or nova_hora != atual["hora"]:
 <<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
             livres = horarios_disponiveis(
                 atual["medico_id"],
                 atual["sala_id"],
                 nova_data,
                 ignorar_agendamento_id=agendamento_id,
             )
+<<<<<<< HEAD
+=======
 =======
             livres = horarios_disponiveis(atual["medico_id"], atual["sala_id"], nova_data)
 >>>>>>> 09d87c69ecc2fa598784ebec661e8be34cb565c3
+>>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
             if nova_hora not in livres:
                 conn.close()
                 flash("Horário indisponível para este médico ou sala.", "danger")
@@ -551,7 +568,7 @@ def decidir_ajuste(ajuste_id):
         flash("Solicitação negada.", "warning")
         return redirect(url_for("user.lista_ajustes"))
 
-    # aceitar → checa disponibilidade
+    # aceitar -> checa disponibilidade
     livres = horarios_disponiveis(row["medico_id"], row["sala_id"], row["novo_dia"])
     if row["nova_hora"] not in livres:
         conn.close()
@@ -623,6 +640,8 @@ def paciente_horarios_api():
 
     livres = horarios_disponiveis(agendamento["medico_id"], agendamento["sala_id"], dia)
     return jsonify(livres)
+<<<<<<< HEAD
+=======
 
 
 @user_bp.route("/paciente/horarios_disponiveis", endpoint="paciente_horarios_api")
@@ -651,6 +670,7 @@ def paciente_horarios_api():
 
     livres = horarios_disponiveis(agendamento["medico_id"], agendamento["sala_id"], dia)
     return jsonify(livres)
+>>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
 
 
 # ------------------ Recepção: criar usuários ------------------
