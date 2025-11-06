@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 # -*- coding: utf-8 -*-
+=======
+>>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
 import sqlite3
 
 from flask import (
@@ -244,7 +247,14 @@ def procedimentos():
     cur.execute(
         """
         SELECT a.id, a.data, a.hora, a.status,
+<<<<<<< HEAD
                a.medico_id, a.sala_id, a.procedimento_id,
+=======
+<<<<<<< HEAD
+               a.medico_id, a.sala_id, a.procedimento_id,
+=======
+>>>>>>> 09d87c69ecc2fa598784ebec661e8be34cb565c3
+>>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
                pac.nome AS paciente, med.nome AS medico,
                pr.nome AS procedimento, s.nome AS sala
         FROM agendamentos a
@@ -385,12 +395,22 @@ def atualizar_agendamento(agendamento_id):
             return redirect(url_for("user.procedimentos"))
 
         if nova_data != atual["data"] or nova_hora != atual["hora"]:
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
             livres = horarios_disponiveis(
                 atual["medico_id"],
                 atual["sala_id"],
                 nova_data,
                 ignorar_agendamento_id=agendamento_id,
             )
+<<<<<<< HEAD
+=======
+=======
+            livres = horarios_disponiveis(atual["medico_id"], atual["sala_id"], nova_data)
+>>>>>>> 09d87c69ecc2fa598784ebec661e8be34cb565c3
+>>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
             if nova_hora not in livres:
                 conn.close()
                 flash("Horário indisponível para este médico ou sala.", "danger")
@@ -620,6 +640,37 @@ def paciente_horarios_api():
 
     livres = horarios_disponiveis(agendamento["medico_id"], agendamento["sala_id"], dia)
     return jsonify(livres)
+<<<<<<< HEAD
+=======
+
+
+@user_bp.route("/paciente/horarios_disponiveis", endpoint="paciente_horarios_api")
+@login_required(role='paciente')
+def paciente_horarios_api():
+    try:
+        agendamento_id = int(request.args.get("agendamento_id", "0"))
+    except ValueError:
+        return jsonify({"ok": False, "msg": "Agendamento inválido."}), 400
+
+    dia = (request.args.get("dia") or "").strip()
+    if not dia:
+        return jsonify({"ok": False, "msg": "Informe o dia."}), 400
+
+    conn = conectar()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT medico_id, sala_id, data, hora FROM agendamentos WHERE id=? AND paciente_id=?",
+        (agendamento_id, session["usuario_id"])
+    )
+    agendamento = cur.fetchone()
+    conn.close()
+
+    if not agendamento:
+        return jsonify({"ok": False, "msg": "Agendamento não encontrado."}), 404
+
+    livres = horarios_disponiveis(agendamento["medico_id"], agendamento["sala_id"], dia)
+    return jsonify(livres)
+>>>>>>> 013b26ac5c3ef1d528760cc5f89c1655a11a881b
 
 
 # ------------------ Recepção: criar usuários ------------------
