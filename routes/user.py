@@ -371,6 +371,27 @@ def visao_recepcionista():
     )
     convenios = [row["convenio"] for row in cur.fetchall()]
 
+    cur.execute(
+        """
+        SELECT c.id, a.data, a.hora, pac.nome AS paciente, med.nome AS medico,
+               pr.nome AS procedimento
+        FROM chamadas_pacientes c
+        JOIN agendamentos a ON a.id = c.agendamento_id
+        JOIN usuarios pac ON pac.id = c.paciente_id
+        JOIN usuarios med ON med.id = c.medico_id
+        JOIN procedimentos pr ON pr.id = a.procedimento_id
+        WHERE c.status = 'pendente'
+        ORDER BY a.data, a.hora, c.id
+        """
+    )
+    chamadas_rows = cur.fetchall()
+    chamadas_pendentes = []
+    for row in chamadas_rows:
+        registro = dict(row)
+        registro["data_display"] = _formatar_data_display(registro.get("data"))
+        registro["hora_display"] = _normalizar_hora(registro.get("hora"))
+        chamadas_pendentes.append(registro)
+
     filtros = {
         "inicio": (request.args.get("inicio") or "").strip(),
         "fim": (request.args.get("fim") or "").strip(),
@@ -478,7 +499,42 @@ def visao_recepcionista():
         pacientes=pacientes,
         procedimentos=procedimentos,
         convenios=convenios,
+        chamadas_pendentes=chamadas_pendentes,
     )
+
+
+@user_bp.route("/recepcionista/chamadas/<int:chamada_id>/encaminhar", methods=["POST"], endpoint="encaminhar_chamada")
+@login_required(role='recepcionista')
+def encaminhar_chamada(chamada_id):
+    criar_tabelas()
+    conn = conectar()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id, status FROM chamadas_pacientes WHERE id=?",
+        (chamada_id,),
+    )
+    chamada = cur.fetchone()
+
+    if not chamada:
+        conn.close()
+        flash("Chamada não encontrada.", "danger")
+        return redirect(url_for("user.visao_recepcionista"))
+
+    if chamada["status"] != "pendente":
+        conn.close()
+        flash("Esta chamada já foi atualizada anteriormente.", "info")
+        return redirect(url_for("user.visao_recepcionista"))
+
+    agora = datetime.utcnow().isoformat()
+    cur.execute(
+        "UPDATE chamadas_pacientes SET status='encaminhado', encaminhado_em=? WHERE id=?",
+        (agora, chamada_id),
+    )
+    conn.commit()
+    conn.close()
+
+    flash("Paciente liberado para atendimento.", "success")
+    return redirect(url_for("user.visao_recepcionista"))
 
 
 @user_bp.route("/recepcionista/procedimentos", methods=["GET"], endpoint="procedimentos")
@@ -719,7 +775,192 @@ def atualizar_agendamento(agendamento_id):
 @user_bp.route("/medico", endpoint="visao_medico")
 @login_required(role='medico')
 def visao_medico():
-    return render_template("medico.html")
+    criar_tabelas()
+    medico_id = session["usuario_id"]
+    hoje = date.today().isoformat()
+
+    conn = conectar()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT COUNT(1) AS total FROM agendamentos WHERE medico_id=? AND data=?",
+        (medico_id, hoje),
+    )
+    total_hoje = cur.fetchone()["total"]
+
+    cur.execute(
+        """SELECT COUNT(1) AS total FROM agendamentos
+            WHERE medico_id=? AND data=? AND LOWER(status)='concluido'""",
+        (medico_id, hoje),
+    )
+    concluidos_hoje = cur.fetchone()["total"]
+
+    cur.execute(
+        """SELECT COUNT(1) AS total FROM agendamentos
+            WHERE medico_id=? AND data=? AND LOWER(status)='cancelado'""",
+        (medico_id, hoje),
+    )
+    cancelados_hoje = cur.fetchone()["total"]
+
+    cur.execute(
+        "SELECT COUNT(1) AS total FROM agendamentos WHERE medico_id=? AND LOWER(status)='concluido'",
+        (medico_id,),
+    )
+    concluidos_totais = cur.fetchone()["total"]
+
+    cur.execute(
+        """
+        SELECT a.id, a.data, a.hora, a.status, a.notas, a.convenio,
+               pac.nome AS paciente, pr.nome AS procedimento, s.nome AS sala
+        FROM agendamentos a
+        JOIN usuarios pac ON pac.id = a.paciente_id
+        JOIN procedimentos pr ON pr.id = a.procedimento_id
+        JOIN salas s ON s.id = a.sala_id
+        WHERE a.medico_id=? AND a.data=?
+        ORDER BY a.hora
+        """,
+        (medico_id, hoje),
+    )
+    consultas_brutas = cur.fetchall()
+
+    cur.execute(
+        """SELECT agendamento_id, status, criado_em, encaminhado_em
+            FROM chamadas_pacientes
+            WHERE medico_id=?
+            ORDER BY id DESC""",
+        (medico_id,),
+    )
+    chamadas = cur.fetchall()
+    chamadas_por_agendamento = {}
+    for row in chamadas:
+        agendamento_id = row["agendamento_id"]
+        if agendamento_id not in chamadas_por_agendamento:
+            chamadas_por_agendamento[agendamento_id] = dict(row)
+
+    status_validos = {valor for valor, _ in STATUS_AGENDAMENTO}
+    consultas = []
+    for row in consultas_brutas:
+        registro = dict(row)
+        status_normalizado = _normalizar_status(registro.get("status", ""), status_validos)
+        registro["status"] = status_normalizado
+        registro["status_label"] = STATUS_LABELS.get(
+            status_normalizado,
+            status_normalizado.title() if isinstance(status_normalizado, str) and status_normalizado else status_normalizado,
+        )
+        registro["data_display"] = _formatar_data_display(registro.get("data"))
+        registro["hora_display"] = _normalizar_hora(registro.get("hora"))
+        registro["notas"] = registro.get("notas") or ""
+        registro["convenio"] = registro.get("convenio") or "—"
+        chamada_info = chamadas_por_agendamento.get(registro["id"])
+        if chamada_info:
+            registro["chamada_status"] = chamada_info.get("status")
+            registro["chamada_criada"] = chamada_info.get("criado_em")
+            registro["chamada_encaminhada"] = chamada_info.get("encaminhado_em")
+        else:
+            registro["chamada_status"] = None
+            registro["chamada_criada"] = None
+            registro["chamada_encaminhada"] = None
+        consultas.append(registro)
+
+    conn.close()
+
+    dashboard = {
+        "total_hoje": total_hoje,
+        "cancelados_hoje": cancelados_hoje,
+        "concluidos_hoje": concluidos_hoje,
+        "concluidos_totais": concluidos_totais,
+    }
+
+    return render_template(
+        "medico.html",
+        dashboard=dashboard,
+        consultas=consultas,
+        data_hoje=_formatar_data_display(hoje),
+    )
+
+
+@user_bp.route("/medico/agendamentos/<int:agendamento_id>/nota", methods=["POST"], endpoint="salvar_nota_medico")
+@login_required(role='medico')
+def salvar_nota_medico(agendamento_id):
+    criar_tabelas()
+    nota = request.form.get("nota", "")
+    if nota is None:
+        nota = ""
+    nota = nota.strip()
+    if len(nota) > 1000:
+        nota = nota[:1000]
+
+    conn = conectar()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id FROM agendamentos WHERE id=? AND medico_id=?",
+        (agendamento_id, session["usuario_id"]),
+    )
+    agendamento = cur.fetchone()
+
+    if not agendamento:
+        conn.close()
+        flash("Agendamento não encontrado.", "danger")
+        return redirect(url_for("user.visao_medico"))
+
+    cur.execute("UPDATE agendamentos SET notas=? WHERE id=?", (nota, agendamento_id))
+    conn.commit()
+    conn.close()
+
+    flash("Notas do atendimento atualizadas.", "success")
+    return redirect(url_for("user.visao_medico"))
+
+
+@user_bp.route("/medico/agendamentos/<int:agendamento_id>/chamar", methods=["POST"], endpoint="chamar_paciente")
+@login_required(role='medico')
+def chamar_paciente(agendamento_id):
+    criar_tabelas()
+    medico_id = session["usuario_id"]
+    conn = conectar()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id, paciente_id, data, status FROM agendamentos WHERE id=? AND medico_id=?",
+        (agendamento_id, medico_id),
+    )
+    agendamento = cur.fetchone()
+
+    if not agendamento:
+        conn.close()
+        flash("Agendamento não encontrado.", "danger")
+        return redirect(url_for("user.visao_medico"))
+
+    hoje = date.today().isoformat()
+    if agendamento["data"] != hoje:
+        conn.close()
+        flash("Chamadas só podem ser feitas para atendimentos do dia.", "warning")
+        return redirect(url_for("user.visao_medico"))
+
+    cur.execute(
+        "SELECT id FROM chamadas_pacientes WHERE agendamento_id=? AND status='pendente'",
+        (agendamento_id,),
+    )
+    chamada_pendente = cur.fetchone()
+    if chamada_pendente:
+        conn.close()
+        flash("Este paciente já foi chamado e aguarda na recepção.", "info")
+        return redirect(url_for("user.visao_medico"))
+
+    agora = datetime.utcnow().isoformat()
+    cur.execute(
+        """INSERT INTO chamadas_pacientes
+               (agendamento_id, medico_id, paciente_id, status, criado_em)
+               VALUES (?, ?, ?, 'pendente', ?)""",
+        (agendamento_id, medico_id, agendamento["paciente_id"], agora),
+    )
+    cur.execute(
+        "UPDATE agendamentos SET status='em atendimento' WHERE id=?",
+        (agendamento_id,),
+    )
+    conn.commit()
+    conn.close()
+
+    flash("Chamada enviada à recepção.", "success")
+    return redirect(url_for("user.visao_medico"))
 
 @user_bp.route("/paciente", endpoint="visao_paciente")
 @login_required(role='paciente')

@@ -50,6 +50,8 @@ def criar_tabelas():
             data TEXT NOT NULL, -- YYYY-MM-DD
             hora TEXT NOT NULL, -- HH:MM
             status TEXT NOT NULL DEFAULT 'agendado',
+            convenio TEXT,
+            notas TEXT,
             FOREIGN KEY (paciente_id) REFERENCES usuarios (id),
             FOREIGN KEY (medico_id) REFERENCES usuarios (id),
             FOREIGN KEY (procedimento_id) REFERENCES procedimentos (id),
@@ -64,6 +66,26 @@ def criar_tabelas():
         cur.execute("ALTER TABLE agendamentos ADD COLUMN status TEXT NOT NULL DEFAULT 'agendado'")
     if 'convenio' not in cols:
         cur.execute("ALTER TABLE agendamentos ADD COLUMN convenio TEXT")
+    if 'notas' not in cols:
+        cur.execute("ALTER TABLE agendamentos ADD COLUMN notas TEXT")
+
+    # chamadas de pacientes da agenda médica
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS chamadas_pacientes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            agendamento_id INTEGER NOT NULL,
+            medico_id INTEGER NOT NULL,
+            paciente_id INTEGER NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pendente', -- pendente|encaminhado|encerrado
+            criado_em TEXT NOT NULL,
+            encaminhado_em TEXT,
+            FOREIGN KEY (agendamento_id) REFERENCES agendamentos (id),
+            FOREIGN KEY (medico_id) REFERENCES usuarios (id),
+            FOREIGN KEY (paciente_id) REFERENCES usuarios (id)
+        )
+    ''')
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_chamadas_status ON chamadas_pacientes(status)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_chamadas_agendamento ON chamadas_pacientes(agendamento_id)")
 
     # --- solicitações de ajuste de agendamento ---
     cur.execute('''
