@@ -3,61 +3,145 @@
 {% block nav_actions %}<a href="{{ url_for('user.user') }}" class="btn btn-light btn-sm">Sair</a>{% endblock %}
 
 {% block content %}
-  <div class="container-lg py-4 py-md-5">
-    <div class="row g-4 align-items-stretch">
-      <div class="col-lg-7">
-        <div class="card h-100 p-4 p-md-5">
-          <span class="badge bg-primary-subtle text-primary w-auto align-self-start px-3 py-2 rounded-pill">Agenda clínica</span>
-          <h2 class="fw-bold mt-3">Bem-vindo, doutor(a)!</h2>
-          <p class="muted mb-4">Consulte os atendimentos do dia e acompanhe rapidamente solicitações dos pacientes.</p>
+<div class="container-lg py-3 py-md-4">
+  <div class="text-center mb-3 position-relative">
+    <span class="badge rounded-pill bg-primary-subtle text-primary fw-semibold px-3 py-2">Consultório</span>
+    <h2 class="page-title mt-3 mb-1">Agenda do dia</h2>
+    <p class="muted mb-0">Visualize os atendimentos de {{ data_hoje or 'hoje' }}, registre observações clínicas e avise a recepção quando o paciente puder entrar.</p>
+    <button class="btn btn-link position-absolute top-0 end-0 text-primary" data-bs-toggle="modal" data-bs-target="#ajudaMedico" aria-label="Ajuda">
+      <i class="bi bi-question-circle-fill fs-4"></i>
+    </button>
+  </div>
 
-          <div class="d-flex flex-column gap-3" id="agendaPlaceholder">
-            <div class="bg-white rounded-4 shadow-sm p-3 p-md-4">
-              <div class="d-flex justify-content-between flex-wrap gap-2">
-                <div>
-                  <small class="text-uppercase text-muted">Próximo atendimento</small>
-                  <h5 class="mb-1">Nenhum agendamento carregado</h5>
-                  <p class="mb-0 text-muted small">Quando houver consultas agendadas para hoje elas aparecerão aqui automaticamente.</p>
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card shadow-soft p-4 p-md-4 h-100">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+          <div>
+            <h4 class="fw-semibold mb-1">Consultas agendadas</h4>
+            <p class="muted mb-0">Detalhes completos dos pacientes e procedimentos do dia.</p>
+          </div>
+          <span class="badge bg-primary-subtle text-primary px-3 py-2">{{ consultas|length }} atendimento(s)</span>
+        </div>
+
+        {% if consultas %}
+          <div class="vstack gap-4">
+            {% for consulta in consultas %}
+              <div class="bg-white border rounded-4 shadow-sm p-3 p-md-4">
+                <div class="d-flex justify-content-between flex-wrap gap-3 align-items-start">
+                  <div>
+                    <small class="text-uppercase text-muted">Horário</small>
+                    <h5 class="mb-1">{{ consulta.hora_display or consulta.hora }}</h5>
+                    <p class="mb-0 text-muted small">Sala {{ consulta.sala }} · Procedimento: {{ consulta.procedimento }}</p>
+                  </div>
+                  <span class="badge rounded-pill {% if consulta.status == 'concluido' %}bg-success-subtle text-success{% elif consulta.status == 'cancelado' %}bg-danger-subtle text-danger{% elif consulta.status == 'em atendimento' %}bg-warning-subtle text-warning-emphasis{% else %}bg-primary-subtle text-primary{% endif %} px-3 py-2">{{ consulta.status_label }}</span>
                 </div>
-                <span class="badge rounded-pill bg-primary text-white align-self-start px-3 py-2">--:--</span>
-              </div>
-            </div>
 
-            <div class="bg-white rounded-4 shadow-sm p-3 p-md-4">
-              <small class="text-uppercase text-muted d-block mb-2">Dica rápida</small>
-              <p class="mb-0 text-muted">Mantenha a recepção informada sempre que um atendimento atrasar para que os pacientes recebam uma nova previsão de horário.</p>
-            </div>
+                <div class="row g-3 mt-3">
+                  <div class="col-md-6">
+                    <small class="text-uppercase text-muted">Paciente</small>
+                    <p class="mb-0 fw-semibold">{{ consulta.paciente }}</p>
+                  </div>
+                  <div class="col-md-3">
+                    <small class="text-uppercase text-muted">Convênio</small>
+                    <p class="mb-0">{{ consulta.convenio }}</p>
+                  </div>
+                  <div class="col-md-3">
+                    <small class="text-uppercase text-muted">Status da chamada</small>
+                    {% if consulta.chamada_status == 'pendente' %}
+                      <span class="badge bg-warning-subtle text-warning-emphasis">Aguardando recepção</span>
+                    {% elif consulta.chamada_status == 'encaminhado' %}
+                      <span class="badge bg-success-subtle text-success">Paciente encaminhado</span>
+                    {% else %}
+                      <span class="badge bg-secondary-subtle text-secondary">Não chamado</span>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <form method="post" action="{{ url_for('user.salvar_nota_medico', agendamento_id=consulta.id) }}" class="mt-3">
+                  <label class="form-label small text-uppercase text-muted">Notas clínicas</label>
+                  <textarea name="nota" class="form-control border-0 shadow-sm" rows="3" placeholder="Anotações sobre evolução, condutas e observações importantes.">{{ consulta.notas }}</textarea>
+                  <div class="d-flex flex-wrap gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-save me-1"></i> Salvar notas</button>
+                  </div>
+                </form>
+
+                <div class="d-flex align-items-center flex-wrap gap-3 mt-3">
+                  <form method="post" action="{{ url_for('user.chamar_paciente', agendamento_id=consulta.id) }}" class="m-0">
+                    <button type="submit" class="btn btn-outline-primary btn-sm" {% if consulta.chamada_status in ['pendente', 'encaminhado'] %}disabled{% endif %}>
+                      <i class="bi bi-bell me-1"></i> Chamar paciente
+                    </button>
+                  </form>
+                  {% if consulta.chamada_status == 'pendente' %}
+                    <span class="text-warning small fw-semibold">Paciente já foi chamado e aguarda na recepção.</span>
+                  {% elif consulta.chamada_status == 'encaminhado' %}
+                    <span class="text-success small fw-semibold">Recepção informou que o paciente está a caminho.</span>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="alert alert-info mb-0">
+            Não há consultas agendadas para hoje. Assim que a recepção confirmar novos atendimentos eles aparecerão aqui automaticamente.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow-soft p-4 p-md-4 h-100">
+        <h5 class="fw-semibold mb-4">Resumo do profissional</h5>
+        <div class="vstack gap-3">
+          <div class="bg-primary-subtle text-primary rounded-4 p-3">
+            <p class="mb-1 small text-uppercase fw-semibold">Consultas do dia</p>
+            <p class="display-6 fw-bold mb-0">{{ dashboard.total_hoje or 0 }}</p>
+            <small>Atendimentos previstos para {{ data_hoje or 'hoje' }}.</small>
+          </div>
+          <div class="bg-success-subtle text-success rounded-4 p-3">
+            <p class="mb-1 small text-uppercase fw-semibold">Concluídas hoje</p>
+            <p class="display-6 fw-bold mb-0">{{ dashboard.concluidos_hoje or 0 }}</p>
+            <small>Consultas finalizadas e registradas como concluídas.</small>
+          </div>
+          <div class="bg-danger-subtle text-danger rounded-4 p-3">
+            <p class="mb-1 small text-uppercase fw-semibold">Canceladas hoje</p>
+            <p class="display-6 fw-bold mb-0">{{ dashboard.cancelados_hoje or 0 }}</p>
+            <small>Pacientes que não compareceram ou tiveram cancelamento registrado.</small>
+          </div>
+          <div class="bg-secondary-subtle text-secondary rounded-4 p-3">
+            <p class="mb-1 small text-uppercase fw-semibold">Consultas concluídas (total)</p>
+            <p class="display-6 fw-bold mb-0">{{ dashboard.concluidos_totais or 0 }}</p>
+            <small>Histórico completo de atendimentos finalizados.</small>
           </div>
         </div>
-      </div>
-
-      <div class="col-lg-5">
-        <div class="card h-100 p-4 p-md-5 d-flex flex-column gap-4">
-          <div>
-            <h5 class="fw-semibold">Solicitações de ajuste</h5>
-            <p class="muted small mb-3">A recepção avisará quando houver pedidos de alteração de horário. Você poderá visualizar os detalhes no painel da recepção.</p>
-            <div class="d-flex align-items-center gap-2">
-              <i class="bi bi-bell-fill text-primary" style="font-size:1.5rem"></i>
-              <span class="text-muted">Fique atento às notificações enviadas pelo time administrativo.</span>
-            </div>
-          </div>
-
-          <div>
-            <h5 class="fw-semibold">Materiais de apoio</h5>
-            <ul class="list-unstyled vstack gap-2 small text-muted">
-              <li><i class="bi bi-check-circle-fill text-primary me-2"></i>Protocolos clínicos atualizados semanalmente.</li>
-              <li><i class="bi bi-check-circle-fill text-primary me-2"></i>Acesso rápido à ficha do paciente pelo prontuário físico.</li>
-              <li><i class="bi bi-check-circle-fill text-primary me-2"></i>Contatos diretos da equipe de enfermagem 24h.</li>
-            </ul>
-          </div>
-
-          <div class="mt-auto">
-            <a href="{{ url_for('user.procedimentos') }}" class="btn btn-outline-primary w-100">
-              <i class="bi bi-calendar2-week me-1"></i> Ver agenda completa na recepção
-            </a>
-          </div>
+        <hr class="my-4">
+        <div>
+          <h6 class="fw-semibold">Dica rápida</h6>
+          <p class="muted small mb-2">Mantenha o status das consultas atualizado para que a recepção tenha visibilidade em tempo real.</p>
+          <p class="muted small mb-0">Use o botão "Chamar paciente" para avisar a equipe assim que puder receber o próximo atendimento.</p>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Ajuda -->
+  <div class="modal fade" id="ajudaMedico" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title">Como usar o painel</h5>
+          <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <ul class="list-unstyled mb-0 small">
+            <li class="mb-2"><strong>Como registrar notas:</strong> escreva na área de "Notas clínicas" e clique em salvar.</li>
+            <li class="mb-2"><strong>Chamar paciente:</strong> use o botão "Chamar paciente" para notificar a recepção; você verá o status da chamada.</li>
+            <li class="mb-2"><strong>Consultas do dia:</strong> os horários exibidos já consideram apenas seus agendamentos do dia atual.</li>
+            <li><strong>Dificuldades de acesso:</strong> saia e entre novamente; se persistir, comunique a recepção.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
